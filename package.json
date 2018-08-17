@@ -1,0 +1,40 @@
+{
+  "name": "to-do-list-js",
+  "version": "1.0.0",
+  "description": "Play around with MVC architecture approach.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack --mode development",
+    "start:dev": "webpack-dev-server --mode development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ViktorSoroka/to-do-list-js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ViktorSoroka/to-do-list-js/issues"
+  },
+  "homepage": "https://github.com/ViktorSoroka/to-do-list-js#readme",
+  "dependencies": {
+    "jquery": "^3.3.1",
+    "jquery-ui": "^1.12.1",
+    "text": "^0.1.0",
+    "underscore": "^1.9.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
+    "babel-preset-env": "^1.7.0",
+    "css-loader": "^1.0.0",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^0.22.1",
+    "url-loader": "^1.1.0",
+    "webpack": "^4.16.5",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.5"
+  }
+}
