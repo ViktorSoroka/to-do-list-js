@@ -1,9 +1,11 @@
 import $ from 'jquery';
 
-import pubSub from '../utils/pub-sub';
+import pubSub from '../services/pub-sub';
 
 
-export default class TodoDB {
+const TODO_DATA_LS_KEY = 'TODO_DATA';
+
+export default class TodoDb {
   constructor(db) {
     pubSub.applyTo(this);
 
@@ -24,16 +26,18 @@ export default class TodoDB {
     }
 
     this._structure = db;
-    this._saveToLSL(db);
+    this._saveToLS(db);
   }
 
-  //save to local storage
-  _saveToLSL(todoCollection) {
-    localStorage.setItem('todoData', JSON.stringify(todoCollection));
-    return 'todoData';
+  reset() {
+    localStorage.removeItem(TODO_DATA_LS_KEY);
+  }
+
+  _saveToLS(todoCollection) {
+    localStorage.setItem(TODO_DATA_LS_KEY, JSON.stringify(todoCollection));
   }
 
   _getFromLs() {
-    return JSON.parse(localStorage.getItem('todoData'));
+    return JSON.parse(localStorage.getItem(TODO_DATA_LS_KEY));
   }
 }

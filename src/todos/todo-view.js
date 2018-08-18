@@ -2,50 +2,56 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/draggable';
 import 'jquery-ui/ui/widgets/droppable';
 import 'jquery-ui/ui/widgets/datepicker';
-import 'jquery-ui-css/all.css';
+import 'jquery-ui/ui/widgets/dialog';
+import 'jquery-ui-css/base.css';
+import 'jquery-ui-css/theme.css';
+import 'jquery-ui-css/datepicker.css';
+import 'jquery-ui-css/dialog.css';
 
-import pubSub from '../utils/pub-sub';
+import pubSub from '../services/pub-sub';
 import { todoComponentTpl, todoItemTpl } from './templates/todo-templates';
+import { allTodosRemoved, todoAdded, todoCategoryChanged, todoItemDropped } from './todo-actions';
+
 
 export default class TodoView {
   constructor() {
     pubSub.applyTo(this);
 
-    this.formId = 'todo-form';
-    this.deleteDiv = 'delete-div';
-    this.clearData = 'clear-data';
-    this.codes = {
-      '1': '#pending',
-      '2': '#inProgress',
-      '3': '#completed'
-    };
+    this.todoContainerSelector = '#todo-container';
+    this.formSelector = '.todos-form';
+    this.addTodoSelector = `${this.formSelector} .add-todo-btn`;
+    this.deleteTodoAreaSelector = '.delete-todo-area';
+    this.deleteTodosSelector = `${this.formSelector} .delete-todos-btn`;
+    this.categories = ['pending', 'in-progress', 'completed'];
 
     this.tplAll = todoComponentTpl;
     this.tplItem = todoItemTpl;
   }
 
   renderAll() {
-    $('#todo-container').html(this.tplAll({
-      title: 'To Do List'
-    }));
+    const tpl = this.tplAll({ title: 'To Do List' });
+
+    $(this.todoContainerSelector).html(tpl);
   }
 
   removeItem(id) {
-    $('#' + id).remove();
+    $(`[data-todo=${id}]`).remove();
   }
 
   renderItem($appendTo, todoModel) {
     $appendTo.append($(this.tplItem(todoModel)));
   }
 
-  clear() {
-    $('.todo-task').remove();
+  deleteTodos() {
+    $('.todo').remove();
+
+    pubSub.publish(allTodosRemoved);
   }
 
-  generateDialog(message) {
+  generateDialog(msg) {
     const responseId = 'response-dialog';
     const title = 'Message';
-    let responseDialog = $('#' + responseId);
+    let responseDialog = $(`#${responseId}`);
 
     if (!responseDialog.length) {
       responseDialog = $('<div />', {
@@ -54,10 +60,10 @@ export default class TodoView {
       }).appendTo($('body'));
     }
 
-    responseDialog.html(message);
+    responseDialog.html(msg);
 
     const buttonOptions = {
-      'Ok'() {
+      Ok() {
         responseDialog.dialog('close');
       }
     };
@@ -73,7 +79,7 @@ export default class TodoView {
 
   generateElement(todoModel) {
     const self = this;
-    const parent = $('#' + todoModel.category);
+    const parent = $(`[data-todos-category=${todoModel.category}]`);
 
     if (!parent) {
       return;
@@ -81,12 +87,12 @@ export default class TodoView {
 
     this.renderItem(parent, todoModel);
 
-    $('#' + todoModel.id).draggable({
+    $(`[data-todo=${todoModel.id}]`).draggable({
       start() {
-        $('#' + self.deleteDiv).show();
+        $(`${self.deleteTodoAreaSelector}`).show();
       },
       stop() {
-        $('#' + self.deleteDiv).hide();
+        $(`${self.deleteTodoAreaSelector}`).hide();
       },
       revert: 'invalid',
       revertDuration: 200
@@ -94,12 +100,8 @@ export default class TodoView {
   }
 
   todoAdd() {
-    const inputs = $('#' + this.formId + ' :input');
+    const inputs = $(`${this.formSelector} :input`);
     const errorMessage = 'Title can not be empty';
-
-    if (inputs.length !== 4) {
-      return;
-    }
 
     const title = inputs[0].value;
     const description = inputs[1].value;
@@ -107,6 +109,7 @@ export default class TodoView {
 
     if (!title) {
       this.generateDialog(errorMessage);
+
       return;
     }
 
@@ -116,7 +119,7 @@ export default class TodoView {
       description: description
     };
 
-    pubSub.publish('todoAdded', tempData);
+    pubSub.publish(todoAdded, tempData);
 
     // Reset Form
     inputs[0].value = '';
@@ -124,28 +127,26 @@ export default class TodoView {
     inputs[2].value = '';
   }
 
-  generateEl(todoCollection) {
-    $.each(todoCollection, (index, todoItem) => {
-      this.generateElement(todoItem);
-    });
+  renderTodos(todoCollection) {
+    $.each(todoCollection, (index, todoItem) => this.generateElement(todoItem));
   }
 
   attachDropOnCategories() {
     const self = this;
 
-    $.each(this.codes, (newCategory, value) => {
-      $(value).droppable({
+    this.categories.forEach((category, i) => {
+      $(`[data-todos-category=${category}]`).droppable({
         drop(event, ui) {
           const element = ui.helper;
-          const id = element.attr('id');
+          const id = element.data('todo');
 
           // Removing old element
           self.removeItem(id);
 
-          pubSub.publish('categoryChanged', id, self.codes[newCategory].slice(1));
+          pubSub.publish(todoCategoryChanged, id, self.categories[i]);
 
           // Hiding Delete Area
-          $('#' + this.deleteDiv).hide();
+          $(`${self.deleteTodoAreaSelector}`).hide();
         }
       });
     });
@@ -154,43 +155,44 @@ export default class TodoView {
   attachDropOnItems() {
     const self = this;
 
-    $('#' + this.deleteDiv).droppable({
+    $(`${self.deleteTodoAreaSelector}`).droppable({
       drop(event, ui) {
         const element = ui.helper;
-        const id = element.attr('id');
+        const id = element.data('todo');
 
         // Removing old element
         self.removeItem(id);
 
         // Updating local storage
-        pubSub.publish('todoItemDropped', id);
+        pubSub.publish(todoItemDropped, id);
 
         // Hiding Delete Area
-        $('#' + self.deleteDiv).hide();
+        $(`${self.deleteTodoAreaSelector}`).hide();
       }
     })
   }
 
   initDatePicker() {
-    const $datePicker = $('#datepicker');
+    const $datePicker = $(`${this.formSelector} .datepicker`);
 
     $datePicker.datepicker();
     $datePicker.datepicker('option', 'dateFormat', 'dd/mm/yy');
   }
 
-  initDraggenDrop() {
-    $('.task-container').droppable();
+  initDragAndDrop() {
+    $('.todos-list').droppable();
     $('.todo-task').draggable({ revert: 'valid', revertDuration: 200 });
   }
 
   init(todoCollection) {
     this.renderAll();
     this.initDatePicker();
-    this.initDraggenDrop();
-    this.generateEl(todoCollection);
+    this.initDragAndDrop();
+    this.renderTodos(todoCollection);
     this.attachDropOnCategories();
     this.attachDropOnItems();
-    $('.btn-add').on('click', this.todoAdd.bind(this));
-    $('#' + this.clearData).on('click', this.clear.bind(this));
+
+    $(this.addTodoSelector).on('click', this.todoAdd.bind(this));
+    $(this.deleteTodosSelector).on('click', this.deleteTodos.bind(this));
   }
 }

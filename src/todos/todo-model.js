@@ -1,4 +1,5 @@
-import pubSub from '../utils/pub-sub';
+import pubSub from '../services/pub-sub';
+
 
 export default class TodoModel {
   constructor(params) {
@@ -20,18 +21,20 @@ export default class TodoModel {
       if (params.title === '') {
         throw Error('Title can`t be empty');
       }
+
       return true;
     }
+
     return false;
   }
 
   changeCategory(newCategoryName) {
-    const categories = ['pending', 'inProgress', 'completed'];
+    const categories = ['pending', 'in-progress', 'completed'];
+    const categoryExists = categories.some(categoryName => categoryName === newCategoryName);
 
-    if (categories.some(function (categoryName) {
-      return categoryName === newCategoryName;
-    })) {
+    if (categoryExists) {
       this.category = newCategoryName;
+
       return true;
     }
 

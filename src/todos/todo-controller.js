@@ -1,4 +1,6 @@
-import pubSub from '../utils/pub-sub';
+import pubSub from '../services/pub-sub';
+import { allTodosRemoved, todoAdded, todoCategoryChanged, todoCollectionUpdated, todoItemDropped } from './todo-actions';
+
 
 export default class TodoController {
   constructor(todoView, todoCollection, todoDb) {
@@ -6,18 +8,19 @@ export default class TodoController {
 
     this.todoCollection = todoCollection;
     this.todoView = todoView;
+    this.todoDb = todoDb;
 
-    todoView.subscribe('removeAll', this.removeAll);
-    todoDb.subscribe('todoCollectionUpdated', todoDb.updateDB);
+    pubSub.subscribe(allTodosRemoved, this.removeAll.bind(this));
+    pubSub.subscribe(todoCollectionUpdated, todoDb.updateDB);
 
-    todoCollection.subscribe('todoAdded', function (todoData) {
-      const newTodo = todoCollection.addNewTodo(todoData);
+    pubSub.subscribe(todoAdded, todoData => {
+      const newTodo = todoCollection.addTodo(todoData);
 
       todoView.generateElement(newTodo);
       todoDb.updateDB(todoCollection.getTodoCollection());
     });
 
-    todoCollection.subscribe('categoryChanged', function (id, newCategory) {
+    pubSub.subscribe(todoCategoryChanged, (id, newCategory) => {
       const todoModel = todoCollection.getTodoById(id);
 
       todoModel.changeCategory(newCategory);
@@ -26,7 +29,7 @@ export default class TodoController {
       todoDb.updateDB(todoCollection.getTodoCollection());
     });
 
-    todoCollection.subscribe('todoItemDropped', function (id) {
+    pubSub.subscribe(todoItemDropped, id => {
       todoCollection.removeTodo(id);
       todoDb.updateDB(todoCollection.getTodoCollection());
     });
@@ -36,7 +39,7 @@ export default class TodoController {
 
   removeAll() {
     this.todoCollection.reset();
-    this.todoView.clear();
+    this.todoDb.reset();
 
     return this;
   }

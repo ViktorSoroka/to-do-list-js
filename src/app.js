@@ -1,11 +1,12 @@
-import TodoDB from './Todo/TodoDB';
-import TodoCollection from './Todo/TodoCollection';
-import TodoView from './Todo/TodoView';
-import TodoController from './Todo/TodoController';
+import TodoDb from './todos/todo-db';
+import TodoCollection from './todos/todo-collection';
+import TodoView from './todos/todo-view';
+import TodoController from './todos/todo-controller';
 
-import './css/todo.css';
+import './styles/todo.css';
 
-const todoDb = new TodoDB();
+
+const todoDb = new TodoDb();
 const todoCollection = new TodoCollection(todoDb.getStructure());
 const todoView = new TodoView();
 

@@ -4,31 +4,25 @@ class _PubSub {
     this.topics = {};
   }
 
-  publish(topic) {
+  publish(topic, ...args) {
     const { topics } = this;
-    const args = [].slice.call(arguments, 1);
 
     if (!topics[topic]) {
       return false;
     }
 
-    topics[topic].forEach(function (item) {
-      item.func.apply(item, args);
-    });
+    topics[topic].forEach(item => item.func.apply(item, args));
   }
 
-  subscribe(topic, cb) {
+  subscribe(topic, func) {
     const { topics } = this;
-
-    if (!topics[topic]) {
-      topics[topic] = [];
-    }
-
     const token = ++this.subToken;
+
+    topics[topic] = topics[topic] || [];
 
     topics[topic].push({
       token,
-      func: cb
+      func
     });
 
     return token;
@@ -37,13 +31,13 @@ class _PubSub {
   unsubscribe(token) {
     const { topics } = this;
 
-    for (let m in topics) {
-      if (topics[m]) {
-        for (let i = 0, l = topics[m].length; i < l; i++) {
-          if (topics[m][i].token === token) {
-            topics[m].splice(i, 1);
+    for (let key in topics) {
+      if (topics.hasOwnProperty(key)) {
+        topics[key].forEach(eventTopic => {
+          if (eventTopic[i].token === token) {
+            eventTopic.splice(i, 1);
           }
-        }
+        });
       }
     }
   }
